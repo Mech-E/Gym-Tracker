@@ -1,53 +1,64 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>GymTracker</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#111111" />
   <style>
-    body { font-family: system-ui, -apple-system, Arial; margin: 16px; }
-    input, select, button { font-size: 16px; padding: 10px; width: 100%; margin: 6px 0; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .small { font-size: 13px; color: #666; }
+    body { font-family: system-ui, Arial; margin: 20px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    h1 { margin: 0 0 12px 0; }
+    h2 { margin: 0 0 10px 0; font-size: 18px; }
+    input, select, button, textarea { width: 100%; padding: 10px; margin-top: 8px; box-sizing: border-box; }
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+    pre { background: #f6f6f6; padding: 10px; border-radius: 8px; white-space: pre-wrap; }
+    #status { margin-top: 10px; font-size: 14px; }
   </style>
 </head>
+
 <body>
-  <h2>GymTracker</h2>
+  <h1>GymTracker</h1>
 
   <div class="card">
-    <div class="small">API URL</div>
-    <input id="apiUrl" placeholder="http://192.168.1.15:8000" />
-    <button onclick="saveApiUrl()">Save API URL</button>
+    <h2>API URL</h2>
+    <input id="apiUrl" placeholder="(leave blank if using same server)" />
+    <button type="button" id="saveApiUrlBtn">Save API URL</button>
+    <div id="status"></div>
   </div>
 
   <div class="card">
-    <h3>Add Exercise</h3>
-    <input id="exName" placeholder="e.g. Bench Press" />
-    <button onclick="addExercise()">Add</button>
+    <h2>Add Exercise</h2>
+    <input id="exName" placeholder="Bench Press" />
+    <button type="button" id="addExerciseBtn">Add</button>
   </div>
 
   <div class="card">
-    <h3>Log Set</h3>
+    <h2>Log Set</h2>
     <select id="exerciseSelect"></select>
+
     <div class="row">
-      <input id="weight" type="number" step="0.5" placeholder="Weight" />
-      <input id="reps" type="number" placeholder="Reps" />
+      <input id="weight" placeholder="Weight" inputmode="decimal" />
+      <input id="reps" placeholder="Reps" inputmode="numeric" />
     </div>
-    <input id="rpe" type="number" step="0.5" placeholder="RPE (optional)" />
-    <button onclick="addSetToDraft()">Add set to workout</button>
-    <button onclick="saveWorkout()">Save workout</button>
-    <div id="draftSets" class="small"></div>
+
+    <input id="rpe" placeholder="RPE (optional)" inputmode="decimal" />
+
+    <button type="button" id="addSetBtn">Add set to workout</button>
+
+    <h3 style="margin:12px 0 6px;">Draft workout</h3>
+    <pre id="draftSets">(none)</pre>
+
+    <textarea id="notes" placeholder="Workout notes (optional)"></textarea>
+    <button type="button" id="saveWorkoutBtn">Save workout</button>
   </div>
 
   <div class="card">
-    <h3>Progress</h3>
-    <button onclick="loadProgress()">Load progress for selected exercise</button>
-    <pre id="progressOut" style="white-space: pre-wrap;"></pre>
+    <h2>Progress</h2>
+    <button type="button" id="loadProgressBtn">Load progress for selected exercise</button>
+    <pre id="progressOut">(none)</pre>
   </div>
 
-  <script src="app.js"></script>
+  <script src="./app.js" defer></script>
 </body>
 </html>
