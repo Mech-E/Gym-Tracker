@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GymTracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#111111" />
+  <style>
+    body { font-family: system-ui, -apple-system, Arial; margin: 16px; }
+    input, select, button { font-size: 16px; padding: 10px; width: 100%; margin: 6px 0; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .small { font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <h2>GymTracker</h2>
+
+  <div class="card">
+    <div class="small">API URL</div>
+    <input id="apiUrl" placeholder="http://192.168.1.15:8000" />
+    <button onclick="saveApiUrl()">Save API URL</button>
+  </div>
+
+  <div class="card">
+    <h3>Add Exercise</h3>
+    <input id="exName" placeholder="e.g. Bench Press" />
+    <button onclick="addExercise()">Add</button>
+  </div>
+
+  <div class="card">
+    <h3>Log Set</h3>
+    <select id="exerciseSelect"></select>
+    <div class="row">
+      <input id="weight" type="number" step="0.5" placeholder="Weight" />
+      <input id="reps" type="number" placeholder="Reps" />
+    </div>
+    <input id="rpe" type="number" step="0.5" placeholder="RPE (optional)" />
+    <button onclick="addSetToDraft()">Add set to workout</button>
+    <button onclick="saveWorkout()">Save workout</button>
+    <div id="draftSets" class="small"></div>
+  </div>
+
+  <div class="card">
+    <h3>Progress</h3>
+    <button onclick="loadProgress()">Load progress for selected exercise</button>
+    <pre id="progressOut" style="white-space: pre-wrap;"></pre>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
