@@ -10,10 +10,8 @@ import schemas
 
 app = FastAPI(title="Gym Tracker")
 
-# Create tables
 Base.metadata.create_all(bind=engine)
 
-# CORS (ok for now; tighten later)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,9 +27,7 @@ def get_db():
     finally:
         db.close()
 
-# -----------------------------
-# Health (support /health and /api/health)
-# -----------------------------
+# -------- Health (all aliases) --------
 @app.get("/health")
 @app.get("/health/")
 @app.get("/api/health")
@@ -39,9 +35,7 @@ def get_db():
 def health():
     return {"ok": True}
 
-# -----------------------------
-# Exercises (support /exercises and /api/exercises, with and without trailing slash)
-# -----------------------------
+# -------- Exercises (all aliases) --------
 @app.get("/exercises", response_model=List[schemas.ExerciseOut])
 @app.get("/exercises/", response_model=List[schemas.ExerciseOut])
 @app.get("/api/exercises", response_model=List[schemas.ExerciseOut])
@@ -55,27 +49,21 @@ def list_exercises(db: Session = Depends(get_db)):
 @app.post("/api/exercises/", response_model=schemas.ExerciseOut)
 def create_exercise(exercise: schemas.ExerciseCreate, db: Session = Depends(get_db)):
     name = (exercise.name or "").strip()
-    if not name:
-        # FastAPI will normally return 422 if schema requires it, but keep safe
-        return {"id": -1, "name": ""}
-
     ex = Backend.Exercise(name=name)
     db.add(ex)
     db.commit()
     db.refresh(ex)
     return ex
 
-# -----------------------------
-# Workouts (support /workouts and /api/workouts, with and without trailing slash)
-# -----------------------------
+# -------- Workouts (all aliases) --------
 @app.post("/workouts", response_model=schemas.WorkoutOut)
 @app.post("/workouts/", response_model=schemas.WorkoutOut)
 @app.post("/api/workouts", response_model=schemas.WorkoutOut)
 @app.post("/api/workouts/", response_model=schemas.WorkoutOut)
 def create_workout(workout: schemas.WorkoutCreate, db: Session = Depends(get_db)):
-    w = Backend.Workout(notes=workout.notes)
+    w = Backend.Workout(notes=workout.notes or "")
     db.add(w)
-    db.flush()  # get w.id without committing yet
+    db.flush()
 
     for s in workout.sets:
         se = Backend.SetEntry(
@@ -83,7 +71,7 @@ def create_workout(workout: schemas.WorkoutCreate, db: Session = Depends(get_db)
             exercise_id=s.exercise_id,
             reps=s.reps,
             rpe=s.rpe,
-            weight=s.weight,
+            weight=s.weight
         )
         db.add(se)
 
@@ -98,19 +86,19 @@ def create_workout(workout: schemas.WorkoutCreate, db: Session = Depends(get_db)
 def list_workouts(db: Session = Depends(get_db)):
     return db.query(Backend.Workout).order_by(Backend.Workout.started_at.desc()).all()
 
-# -----------------------------
-# Progress (support /progress and /api/progress)
-# -----------------------------
+# -------- Progress: exercise (all aliases) --------
 @app.get("/progress/{exercise_id}")
 @app.get("/progress/{exercise_id}/")
 @app.get("/api/progress/{exercise_id}")
 @app.get("/api/progress/{exercise_id}/")
 def get_progress(exercise_id: int, db: Session = Depends(get_db)):
-    sets = (
-        db.query(Backend.SetEntry)
+    # Join sets to workout to get a timestamp for graphing
+    rows = (
+        db.query(Backend.SetEntry, Backend.Workout)
+        .join(Backend.Workout, Backend.SetEntry.workout_id == Backend.Workout.id)
         .filter(Backend.SetEntry.exercise_id == exercise_id)
-        .order_by(Backend.SetEntry.id.asc())
-        .limit(2000)
+        .order_by(Backend.Workout.started_at.asc(), Backend.SetEntry.id.asc())
+        .limit(5000)
         .all()
     )
 
@@ -121,31 +109,57 @@ def get_progress(exercise_id: int, db: Session = Depends(get_db)):
     best_1rm = 0.0
     series = []
 
-    for s in sets:
-        w = float(s.weight)
-        r = int(s.reps)
+    for s, w in rows:
+        weight = float(s.weight)
+        reps = int(s.reps)
+        est = epley_1rm(weight, reps)
 
-        best_weight = max(best_weight, w)
-        best_1rm = max(best_1rm, epley_1rm(w, r))
+        best_weight = max(best_weight, weight)
+        best_1rm = max(best_1rm, est)
 
-        series.append(
-            {
-                "set_id": s.id,
-                "weight": w,
-                "reps": r,
-                "rpe": None if s.rpe is None else float(s.rpe),
-                "e1rm": round(epley_1rm(w, r), 2),
-            }
-        )
+        series.append({
+            "t": w.started_at.isoformat(),
+            "weight": weight,
+            "reps": reps,
+            "e1rm": round(est, 2),
+        })
 
     return {
+        "kind": "exercise",
         "exercise_id": exercise_id,
         "best_weight": round(best_weight, 2),
         "best_1rm": round(best_1rm, 2),
-        "series": series,
+        "series": series
     }
 
-# -----------------------------
-# Serve frontend LAST
-# -----------------------------
+# -------- Bodyweight: log + list + progress (all aliases) --------
+@app.post("/bodyweight", response_model=schemas.BodyweightOut)
+@app.post("/bodyweight/", response_model=schemas.BodyweightOut)
+@app.post("/api/bodyweight", response_model=schemas.BodyweightOut)
+@app.post("/api/bodyweight/", response_model=schemas.BodyweightOut)
+def log_bodyweight(entry: schemas.BodyweightCreate, db: Session = Depends(get_db)):
+    bw = Backend.BodyweightEntry(weight=float(entry.weight), notes=entry.notes or "")
+    db.add(bw)
+    db.commit()
+    db.refresh(bw)
+    return bw
+
+@app.get("/bodyweight", response_model=List[schemas.BodyweightOut])
+@app.get("/bodyweight/", response_model=List[schemas.BodyweightOut])
+@app.get("/api/bodyweight", response_model=List[schemas.BodyweightOut])
+@app.get("/api/bodyweight/", response_model=List[schemas.BodyweightOut])
+def list_bodyweight(db: Session = Depends(get_db)):
+    return db.query(Backend.BodyweightEntry).order_by(Backend.BodyweightEntry.measured_at.asc()).all()
+
+@app.get("/progress/bodyweight")
+@app.get("/progress/bodyweight/")
+@app.get("/api/progress/bodyweight")
+@app.get("/api/progress/bodyweight/")
+def bodyweight_progress(db: Session = Depends(get_db)):
+    rows = db.query(Backend.BodyweightEntry).order_by(Backend.BodyweightEntry.measured_at.asc()).all()
+    series = [{"t": r.measured_at.isoformat(), "weight": float(r.weight)} for r in rows]
+    best = max([x["weight"] for x in series], default=0.0)
+    return {"kind": "bodyweight", "best_weight": round(best, 2), "series": series}
+
+# -------- Serve frontend LAST --------
 app.mount("/", StaticFiles(directory=".", html=True), name="static")

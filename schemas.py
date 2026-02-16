@@ -1,4 +1,3 @@
-# schemas.py
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel
@@ -6,13 +5,11 @@ from pydantic import BaseModel
 
 class ExerciseCreate(BaseModel):
     name: str
-    description: Optional[str] = None
 
 
 class ExerciseOut(BaseModel):
     id: int
     name: str
-    description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -46,6 +43,22 @@ class WorkoutOut(BaseModel):
     started_at: datetime
     notes: str
     sets: List[SetOut] = []
+
+    class Config:
+        from_attributes = True
+
+
+# ✅ NEW: Bodyweight
+class BodyweightCreate(BaseModel):
+    weight: float
+    notes: Optional[str] = ""
+
+
+class BodyweightOut(BaseModel):
+    id: int
+    measured_at: datetime
+    weight: float
+    notes: str
 
     class Config:
         from_attributes = True

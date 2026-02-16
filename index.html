@@ -9,11 +9,12 @@
     .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
     h1 { margin: 0 0 12px 0; }
     h2 { margin: 0 0 10px 0; font-size: 18px; }
-    input, select, button, textarea { width: 100%; padding: 10px; margin-top: 8px; box-sizing: border-box; }
+    input, select, button { width: 100%; padding: 10px; margin-top: 8px; box-sizing: border-box; }
     .row { display: flex; gap: 10px; }
     .row > * { flex: 1; }
-    pre { background: #f6f6f6; padding: 10px; border-radius: 8px; white-space: pre-wrap; }
+    .iconBtn { width: auto; padding: 10px 14px; font-size: 18px; }
     #status { margin-top: 10px; font-size: 14px; }
+    canvas { width: 100% !important; max-height: 320px; }
   </style>
 </head>
 
@@ -45,20 +46,33 @@
     <input id="rpe" placeholder="RPE (optional)" inputmode="decimal" />
 
     <button type="button" id="addSetBtn">Add set to workout</button>
-
-    <h3 style="margin:12px 0 6px;">Draft workout</h3>
-    <pre id="draftSets">(none)</pre>
-
-    <textarea id="notes" placeholder="Workout notes (optional)"></textarea>
     <button type="button" id="saveWorkoutBtn">Save workout</button>
   </div>
 
+  <!-- ✅ NEW: Bodyweight -->
   <div class="card">
-    <h2>Progress</h2>
-    <button type="button" id="loadProgressBtn">Load progress for selected exercise</button>
-    <pre id="progressOut">(none)</pre>
+    <h2>Bodyweight</h2>
+    <div class="row">
+      <input id="bwValue" placeholder="Weight on scale" inputmode="decimal" />
+      <button type="button" class="iconBtn" id="logBWBtn">➕</button>
+    </div>
+    <small>Logs bodyweight with current date/time.</small>
   </div>
 
+  <!-- ✅ NEW: Progress selector + graph -->
+  <div class="card">
+    <h2>Progress</h2>
+    <div class="row">
+      <select id="progressSelect"></select>
+      <button type="button" class="iconBtn" id="graphBtn">📈</button>
+    </div>
+
+    <canvas id="progressChart"></canvas>
+    <div id="progressStats"></div>
+  </div>
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="./app.js" defer></script>
 </body>
 </html>
