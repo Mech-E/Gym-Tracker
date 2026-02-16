@@ -29,16 +29,21 @@ def get_sdb():
     finally:
         db.close()
 
+# ✅ Health: support BOTH /health and /api/health
 @app.get("/health")
+@app.get("/api/health")
 def health():
     return {"ok": True}
 
 # ---------- Exercises ----------
+# ✅ support BOTH /exercises/ and /api/exercises/
 @app.get("/exercises/", response_model=List[schemas.ExerciseOut])
+@app.get("/api/exercises/", response_model=List[schemas.ExerciseOut])
 def list_exercises(db: Session = Depends(get_sdb)):
     return db.query(Backend.Exercise).order_by(Backend.Exercise.name.asc()).all()
 
 @app.post("/exercises/", response_model=schemas.ExerciseOut)
+@app.post("/api/exercises/", response_model=schemas.ExerciseOut)
 def create_exercise(exercise: schemas.ExerciseCreate, db: Session = Depends(get_sdb)):
     ex = Backend.Exercise(name=exercise.name.strip())
     db.add(ex)
@@ -47,7 +52,9 @@ def create_exercise(exercise: schemas.ExerciseCreate, db: Session = Depends(get_
     return ex
 
 # ---------- Workouts ----------
+# ✅ support BOTH /workouts/ and /api/workouts/
 @app.post("/workouts/", response_model=schemas.WorkoutOut)
+@app.post("/api/workouts/", response_model=schemas.WorkoutOut)
 def create_workout(workout: schemas.WorkoutCreate, db: Session = Depends(get_sdb)):
     w = Backend.Workout(notes=workout.notes)
     db.add(w)
@@ -68,11 +75,14 @@ def create_workout(workout: schemas.WorkoutCreate, db: Session = Depends(get_sdb
     return w
 
 @app.get("/workouts/", response_model=List[schemas.WorkoutOut])
+@app.get("/api/workouts/", response_model=List[schemas.WorkoutOut])
 def list_workouts(db: Session = Depends(get_sdb)):
     return db.query(Backend.Workout).order_by(Backend.Workout.started_at.desc()).all()
 
 # ---------- Progress ----------
+# ✅ support BOTH /progress/... and /api/progress/...
 @app.get("/progress/{exercise_id}")
+@app.get("/api/progress/{exercise_id}")
 def get_progress(exercise_id: int, db: Session = Depends(get_sdb)):
     sets = (
         db.query(Backend.SetEntry)
@@ -94,7 +104,7 @@ def get_progress(exercise_id: int, db: Session = Depends(get_sdb)):
         best_1rm = max(best_1rm, epley_1rm(s.weight, s.reps))
         series.append({
             "set_id": s.id,
-            "weight": s.weight,   # fixed typo
+            "weight": s.weight,
             "reps": s.reps,
             "e1rm": round(epley_1rm(s.weight, s.reps), 2)
         })
@@ -107,8 +117,4 @@ def get_progress(exercise_id: int, db: Session = Depends(get_sdb)):
     }
 
 # ---------- Serve frontend LAST ----------
-# If your index.html/app.js are in repo root:
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
-# If they are inside a folder named "app", use instead:
-# app.mount("/", StaticFiles(directory="app", html=True), name="static")
